@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace GitHub.Unity
 {
-    static class ProcessTaskExtensions
+    public static class ProcessTaskExtensions
     {
         public static T Configure<T>(this T task, IProcessManager processManager, bool withInput)
             where T : IProcess
@@ -117,15 +117,22 @@ namespace GitHub.Unity
             {
                 Process.OutputDataReceived += (s, e) =>
                 {
-                    lastOutput = DateTimeOffset.UtcNow;
-                    gotOutput.Set();
-                    if (e.Data != null)
+                    try
                     {
-                        var line = Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(e.Data));
-                        outputProcessor.LineReceived(line.TrimEnd('\r','\n'));
+                        lastOutput = DateTimeOffset.UtcNow;
+                        gotOutput.Set();
+                        if (e.Data != null)
+                        {
+                            var line = Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(e.Data));
+                            outputProcessor.LineReceived(line.TrimEnd('\r', '\n'));
+                        }
+                        else
+                            outputProcessor.LineReceived(null);
                     }
-                    else
-                        outputProcessor.LineReceived(null);
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex);
+                    }
                 };
             }
 
@@ -256,7 +263,7 @@ namespace GitHub.Unity
     /// </summary>
     /// <typeparam name="T">The type of the results. If it's a List<> or similar, then specify the full List<> type here and the inner type of the List in <typeparam name="TData"/>
     /// <typeparam name="TData">If <typeparam name="TData"/> is a list or similar, then specify its inner type here</typeparam>
-    class ProcessTask<T> : TaskBase<T>, IProcessTask<T>
+    public class ProcessTask<T> : TaskBase<T>, IProcessTask<T>
     {
         private IOutputProcessor<T> outputProcessor;
         private ProcessWrapper wrapper;
@@ -395,7 +402,7 @@ namespace GitHub.Unity
         public virtual string ProcessArguments { get; }
     }
 
-    class ProcessTaskWithListOutput<T> : DataTaskBase<T, List<T>>, IProcessTask<T, List<T>>
+    public class ProcessTaskWithListOutput<T> : DataTaskBase<T, List<T>>, IProcessTask<T, List<T>>
     {
         private IOutputProcessor<T, List<T>> outputProcessor;
         private Exception thrownException = null;
@@ -543,7 +550,7 @@ namespace GitHub.Unity
         public override string ProcessArguments => arguments;
     }
 
-    class SimpleProcessTask : ProcessTask<string>
+    public class SimpleProcessTask : ProcessTask<string>
     {
         private readonly NPath? fullPathToExecutable;
         private readonly string arguments;
@@ -565,7 +572,7 @@ namespace GitHub.Unity
         public override string ProcessArguments => arguments;
     }
 
-    class SimpleListProcessTask : ProcessTaskWithListOutput<string>
+    public class SimpleListProcessTask : ProcessTaskWithListOutput<string>
     {
         private readonly NPath fullPathToExecutable;
         private readonly string arguments;

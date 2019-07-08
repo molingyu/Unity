@@ -89,97 +89,76 @@ namespace GitHub.Unity
                 }
                 else
                 {
-                    // M GitHubVS.sln
-                    //R  README.md -> README2.md
-                    // D deploy.cmd
-                    //A  something added.txt
-                    //?? something.txt
+                    var gitStatusMarker = proc.Read(2);
+                    if (gitStatusMarker == null)
+                    {
+                        HandleUnexpected(line);
+                        return;
+                    }
+
+
+                    /*
+                     X          Y     Meaning
+                    -------------------------------------------------
+	                         [AMD]   not updated
+                    M        [ MD]   updated in index
+                    A        [ MD]   added to index
+                    D                deleted from index
+                    R        [ MD]   renamed in index
+                    C        [ MD]   copied in index
+                    [MARC]           index and work tree matches
+                    [ MARC]     M    work tree changed since index
+                    [ MARC]     D    deleted in work tree
+                    [ D]        R    renamed in work tree
+                    [ D]        C    copied in work tree
+                    -------------------------------------------------
+                    D           D    unmerged, both deleted
+                    A           A    unmerged, both added
+                    A           U    unmerged, added by us
+                    D           U    unmerged, deleted by us
+                    U           A    unmerged, added by them
+                    U           D    unmerged, deleted by them
+                    U           U    unmerged, both modified
+                    -------------------------------------------------
+                    ?           ?    untracked
+                    !           !    ignored
+                    -------------------------------------------------
+                     */
 
                     string originalPath = null;
                     string path = null;
-                    var status = GitFileStatus.Added;
-                    var staged = false;
 
-                    if (proc.Matches('?'))
+                    var indexStatusMarker = gitStatusMarker[0];
+                    var workTreeStatusMarker = gitStatusMarker[1];
+
+                    GitFileStatus indexStatus = GitStatusEntry.ParseStatusMarker(indexStatusMarker);
+                    GitFileStatus workTreeStatus = GitStatusEntry.ParseStatusMarker(workTreeStatusMarker);
+                    GitFileStatus status = workTreeStatus != GitFileStatus.None ? workTreeStatus : indexStatus;
+
+                    if (status == GitFileStatus.None)
                     {
-                        //?? something.txt
-                        proc.MoveToAfter('?');
-                        proc.SkipWhitespace();
-
-                        path = proc.ReadToEnd().Trim('"');
-                        status = GitFileStatus.Untracked;
+                        HandleUnexpected(line);
+                        return;
                     }
-                    else if (proc.Matches('!'))
-                    {
-                        //?? something.txt
-                        proc.MoveToAfter('!');
-                        proc.SkipWhitespace();
 
-                        path = proc.ReadToEnd().Trim('"');
-                        status = GitFileStatus.Ignored;
+                    if (status == GitFileStatus.Copied || status == GitFileStatus.Renamed)
+                    {
+                        var files =
+                            proc.ReadToEnd()
+                                .Split(new[] { "->" }, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(s => s.Trim())
+                                .Select(s => s.Trim('"'))
+                                .ToArray();
+
+                        originalPath = files[0];
+                        path = files[1];
                     }
                     else
                     {
-                        if (proc.IsAtWhitespace)
-                        {
-                            proc.SkipWhitespace();
-                        }
-                        else
-                        {
-                            staged = true;
-                        }
-
-                        if (proc.Matches('M'))
-                        {
-                            //M  GitHubVS.sln
-                            proc.MoveNext();
-                            proc.SkipWhitespace();
-
-                            path = proc.ReadToEnd().Trim('"');
-                            status = GitFileStatus.Modified;
-                        }
-                        else if (proc.Matches('D'))
-                        {
-                            //D  deploy.cmd
-                            proc.MoveNext();
-                            proc.SkipWhitespace();
-
-                            path = proc.ReadToEnd().Trim('"');
-                            status = GitFileStatus.Deleted;
-                        }
-                        else if (proc.Matches('R'))
-                        {
-                            //R  README.md -> README2.md
-                            proc.MoveNext();
-                            proc.SkipWhitespace();
-
-                            var files =
-                                proc.ReadToEnd()
-                                    .Split(new[] { "->" }, StringSplitOptions.RemoveEmptyEntries)
-                                    .Select(s => s.Trim())
-                                    .Select(s => s.Trim('"'))
-                                    .ToArray();
-
-                            originalPath = files[0];
-                            path = files[1];
-                            status = GitFileStatus.Renamed;
-                        }
-                        else if (proc.Matches('A'))
-                        {
-                            //A  something added.txt
-                            proc.MoveNext();
-                            proc.SkipWhitespace();
-
-                            path = proc.ReadToEnd().Trim('"');
-                            status = GitFileStatus.Added;
-                        }
-                        else
-                        {
-                            HandleUnexpected(line);
-                        }
+                        path = proc.ReadToEnd().Trim().Trim('"');
                     }
 
-                    var gitStatusEntry = gitObjectFactory.CreateGitStatusEntry(path, status, originalPath, staged);
+                    var gitStatusEntry = gitObjectFactory.CreateGitStatusEntry(path, indexStatus, workTreeStatus, originalPath);
                     gitStatus.Entries.Add(gitStatusEntry);
                 }
             }
@@ -215,9 +194,9 @@ namespace GitHub.Unity
             Logger.Error("Unexpected Input:\"{0}\"", line);
         }
 
-        class StatusOutputPathComparer : IComparer<string>
+        public class StatusOutputPathComparer : IComparer<string>
         {
-            internal static StatusOutputPathComparer Instance => new StatusOutputPathComparer();
+            public static StatusOutputPathComparer Instance => new StatusOutputPathComparer();
 
             public int Compare(string x, string y)
             {

@@ -5,34 +5,53 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace GitHub.Unity
 {
     class Utility : ScriptableObject
     {
-        public static Texture2D GetIcon(string filename, string filename2x = "")
+        private static Dictionary<string, Texture2D> iconCache = new Dictionary<string, Texture2D>();
+
+        public static bool IsDarkTheme {
+            get {
+                var defaultTextColor = Styles.Label.normal.textColor;
+                return defaultTextColor.r > 0.5f && defaultTextColor.g > 0.5f && defaultTextColor.b > 0.5f;
+            }
+        }
+
+        public static Texture2D GetIcon(string filename, string filename2x = "", bool invertColors = false)
         {
             if (EditorGUIUtility.pixelsPerPoint > 1f && !string.IsNullOrEmpty(filename2x))
             {
                 filename = filename2x;
             }
 
+            var key = invertColors ? "dark_" + filename : "light_" + filename;
+
+            if (iconCache.ContainsKey(key))
+            {
+                return iconCache[key];
+            }
+
             Texture2D texture2D = null;
 
             var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("GitHub.Unity.IconsAndLogos." + filename);
-            if (stream != null)
+            if (stream == null)
             {
-                texture2D = stream.ToTexture2D();
+                stream = new MemoryStream(Application.dataPath.ToNPath().Combine("Editor/GitHub.Unity/IconsAndLogos/", filename).ReadAllBytes());
             }
-            else
-            {
-                var iconPath = "Assets/Editor/GitHub.Unity/IconsAndLogos/" + filename;
-                texture2D = AssetDatabase.LoadAssetAtPath<Texture2D>(iconPath);
-            }
+
+            texture2D = stream.ToTexture2D();
+            stream.Dispose();
 
             if (texture2D != null)
             {
                 texture2D.hideFlags = HideFlags.HideAndDontSave;
+                if (invertColors) {
+                    texture2D.InvertColors();
+                }
+                iconCache.Add(key, texture2D);
             }
 
             return texture2D;

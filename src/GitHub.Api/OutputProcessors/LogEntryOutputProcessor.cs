@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -143,7 +144,6 @@ namespace GitHub.Unity
                         }
 
                         summary = line;
-                        descriptionLines.Add(line);
                         phase++;
                         // there's no description so skip it
                         if (oneliner)
@@ -190,46 +190,10 @@ namespace GitHub.Unity
                     var proc = new LineParser(line);
 
                     string file = null;
-                    GitFileStatus status;
+                    GitFileStatus status = GitFileStatus.None;
                     string originalPath = null;
 
-                    if (proc.Matches('M'))
-                    {
-                        status = GitFileStatus.Modified;
-                    }
-                    else if (proc.Matches('A'))
-                    {
-                        status = GitFileStatus.Added;
-                    }
-                    else if (proc.Matches('D'))
-                    {
-                        status = GitFileStatus.Deleted;
-                    }
-                    else if (proc.Matches('R'))
-                    {
-                        status = GitFileStatus.Renamed;
-                    }
-                    else if (proc.Matches('C'))
-                    {
-                        status = GitFileStatus.Copied;
-                    }
-                    else if (proc.Matches('T'))
-                    {
-                        status = GitFileStatus.TypeChange;
-                    }
-                    else if (proc.Matches('U'))
-                    {
-                        status = GitFileStatus.Unmerged;
-                    }
-                    else if (proc.Matches('X'))
-                    {
-                        status = GitFileStatus.Unknown;
-                    }
-                    else if (proc.Matches('B'))
-                    {
-                        status = GitFileStatus.Broken;
-                    }
-                    else if (String.IsNullOrEmpty(line))
+                    if (proc.IsAtEnd)
                     {
                         // there's no files on this commit, it's a new one!
                         ReturnGitLogEntry();
@@ -237,54 +201,34 @@ namespace GitHub.Unity
                     }
                     else
                     {
+                        status = GitStatusEntry.ParseStatusMarker(proc.ReadChar());
+                    }
+
+                    if (status == GitFileStatus.None)
+                    {
                         HandleUnexpected(line);
                         return;
                     }
 
-                    switch (status)
+                    proc.ReadUntilWhitespace();
+                    if (status == GitFileStatus.Copied || status == GitFileStatus.Renamed)
                     {
-                        case GitFileStatus.Modified:
-                        case GitFileStatus.Added:
-                        case GitFileStatus.Deleted:
-                            proc.SkipWhitespace();
+                        var files =
+                            proc.ReadToEnd().Trim()
+                                .Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(s => s.Trim())
+                                .Select(s => s.Trim('"'))
+                                .ToArray();
 
-                            file = proc.Matches('"') 
-                                ? proc.ReadUntil('"')
-                                : proc.ReadToEnd();
-
-                            break;
-                        case GitFileStatus.Renamed:
-
-                            proc.SkipWhitespace();
-
-                            originalPath = 
-                                proc.Matches('"') 
-                                ? proc.ReadUntil('"') 
-                                : proc.ReadUntilWhitespace();
-
-                            proc.SkipWhitespace();
-
-                            file = proc.Matches('"') 
-                                ? proc.ReadUntil('"') 
-                                : proc.ReadToEnd();
-
-                            break;
-
-                        default:
-                            proc.SkipWhitespace();
-
-                            file = proc.Matches('"')
-                                ? proc.ReadUntil('"')
-                                : proc.ReadUntilWhitespace();
-                            if (file == null)
-                            {
-                                file = proc.ReadToEnd();
-                            }
-
-                            break;
+                        originalPath = files[0];
+                        file = files[1];
+                    }
+                    else
+                    {
+                        file = proc.ReadToEnd().Trim().Trim('"');
                     }
 
-                    changes.Add(gitObjectFactory.CreateGitStatusEntry(file, status, originalPath));
+                    changes.Add(gitObjectFactory.CreateGitStatusEntry(file, status, GitFileStatus.None, originalPath));
 
                     break;
 
@@ -313,7 +257,8 @@ namespace GitHub.Unity
         {
             PopNewlines();
 
-            var description = string.Join(Environment.NewLine, descriptionLines.ToArray());
+            var filteredDescriptionLines = (descriptionLines.Any() && string.IsNullOrEmpty(descriptionLines.First()) ? descriptionLines.Skip(1) : descriptionLines).ToArray();
+            var description = string.Join(Environment.NewLine, filteredDescriptionLines);
 
             if (time.HasValue)
             {

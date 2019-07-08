@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 
-namespace GitHub.Unity
+namespace GitHub.Unity.Git.Tasks
 {
-    class GitCheckoutTask : ProcessTask<string>
+    public class GitCheckoutTask : ProcessTask<string>
     {
         private const string TaskName = "git checkout";
         private readonly string arguments;
@@ -30,8 +29,29 @@ namespace GitHub.Unity
             arguments = "checkout -- .";
         }
 
+        public GitCheckoutTask(
+            string changeset,
+            IEnumerable<string> files,
+            CancellationToken token,
+            IOutputProcessor<string> processor = null) : base(token, processor ?? new SimpleOutputProcessor())
+        {
+            Guard.ArgumentNotNull(files, "files");
+            Name = TaskName;
+
+            arguments = "checkout ";
+            arguments += changeset;
+            arguments += " -- ";
+
+            foreach (var file in files)
+            {
+                arguments += " \"" + file.ToNPath().ToString(SlashMode.Forward) + "\"";
+            }
+
+            Message = "Checking out files at rev " + changeset.Substring(0, 7); 
+        }
+
         public override string ProcessArguments { get { return arguments; } }
         public override TaskAffinity Affinity { get { return TaskAffinity.Exclusive; } }
-        public override string Message { get; set; } = "Checking out branch...";
+        public override string Message { get; set; } = "Checking out files...";
     }
 }

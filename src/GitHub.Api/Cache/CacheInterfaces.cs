@@ -9,6 +9,7 @@ namespace GitHub.Unity
         RepositoryInfo,
         Branches,
         GitLog,
+        GitFileLog,
         GitAheadBehind,
         GitStatus,
         GitLocks,
@@ -22,6 +23,7 @@ namespace GitHub.Unity
 
         IBranchCache BranchCache { get; }
         IGitLogCache GitLogCache { get; }
+        IGitFileLogCache GitFileLogCache { get; }
         IGitAheadBehindCache GitTrackingStatusCache { get; }
         IGitStatusCache GitStatusEntriesCache { get; }
         IGitLocksCache GitLocksCache { get; }
@@ -40,6 +42,7 @@ namespace GitHub.Unity
 
         bool ValidateData();
         void InvalidateData();
+        void ResetInvalidation();
 
         DateTimeOffset LastUpdatedAt { get; }
         CacheType CacheType { get; }
@@ -91,7 +94,7 @@ namespace GitHub.Unity
         ILocalConfigBranchDictionary LocalConfigBranches { get; }
         IRemoteConfigBranchDictionary RemoteConfigBranches { get; }
         IConfigRemoteDictionary ConfigRemotes { get; }
-        
+
         void SetRemotes(Dictionary<string, ConfigRemote> remoteConfigs, Dictionary<string, Dictionary<string, ConfigBranch>> configBranches, GitRemote[] gitRemotes, GitBranch[] gitBranches);
         void SetLocals(Dictionary<string, ConfigBranch> configBranches, GitBranch[] gitBranches);
     }
@@ -112,6 +115,11 @@ namespace GitHub.Unity
     public interface IGitLogCache : IManagedCache
     {
         List<GitLogEntry> Log { get; set; }
+    }
+
+    public interface IGitFileLogCache : IManagedCache
+    {
+        GitFileLog FileLog { get; set; }
     }
 
     public interface ICanUpdate<T>

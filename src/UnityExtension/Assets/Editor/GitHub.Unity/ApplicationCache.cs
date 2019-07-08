@@ -147,6 +147,7 @@ namespace GitHub.Unity
                     cacheContainer.SetCacheInitializer(CacheType.GitAheadBehind, () => GitAheadBehindCache.Instance);
                     cacheContainer.SetCacheInitializer(CacheType.GitLocks, () => GitLocksCache.Instance);
                     cacheContainer.SetCacheInitializer(CacheType.GitLog, () => GitLogCache.Instance);
+                    cacheContainer.SetCacheInitializer(CacheType.GitFileLog, () => GitFileLogCache.Instance);
                     cacheContainer.SetCacheInitializer(CacheType.GitStatus, () => GitStatusCache.Instance);
                     cacheContainer.SetCacheInitializer(CacheType.GitUser, () => GitUserCache.Instance);
                     cacheContainer.SetCacheInitializer(CacheType.RepositoryInfo, () => RepositoryInfoCache.Instance);
@@ -213,12 +214,14 @@ namespace GitHub.Unity
 
         private void Invalidate()
         {
-            if (!isInvalidating)
-            {
-                isInvalidating = true;
-                LastUpdatedAt = DateTimeOffset.MinValue;
-                CacheInvalidated.SafeInvoke(CacheType);
-            }
+            isInvalidating = true;
+            LastUpdatedAt = DateTimeOffset.MinValue;
+            CacheInvalidated.SafeInvoke(CacheType);
+        }
+
+        public void ResetInvalidation()
+        {
+            isInvalidating = false;
         }
 
         protected void SaveData(DateTimeOffset now, bool isChanged)
@@ -463,25 +466,25 @@ namespace GitHub.Unity
                 isUpdated = true;
             }
 
-            if (forcedInvalidation ||!Nullable.Equals(currentGitBranch, data.CurrentGitBranch))
+            if (forcedInvalidation || !Nullable.Equals(currentGitBranch, data.CurrentGitBranch))
             {
                 currentGitBranch = data.CurrentGitBranch ?? GitBranch.Default;
                 isUpdated = true;
             }
 
-            if (forcedInvalidation ||!Nullable.Equals(currentConfigRemote, data.CurrentConfigRemote))
+            if (forcedInvalidation || !Nullable.Equals(currentConfigRemote, data.CurrentConfigRemote))
             {
                 currentConfigRemote = data.CurrentConfigRemote ?? ConfigRemote.Default;
                 isUpdated = true;
             }
 
-            if (forcedInvalidation ||!Nullable.Equals(currentConfigBranch, data.CurrentConfigBranch))
+            if (forcedInvalidation || !Nullable.Equals(currentConfigBranch, data.CurrentConfigBranch))
             {
                 currentConfigBranch = data.CurrentConfigBranch ?? ConfigBranch.Default;
                 isUpdated = true;
             }
 
-            if (forcedInvalidation ||!String.Equals(currentHead, data.CurrentHead))
+            if (forcedInvalidation || !String.Equals(currentHead, data.CurrentHead))
             {
                 currentHead = data.CurrentHead;
                 isUpdated = true;
@@ -610,6 +613,46 @@ namespace GitHub.Unity
                 else if (forcedInvalidation || !log.SequenceEqual(value))
                 {
                     log = value;
+                    isUpdated = true;
+                }
+
+                SaveData(now, isUpdated);
+            }
+        }
+
+        public override TimeSpan DataTimeout { get { return TimeSpan.FromMinutes(1); } }
+    }
+
+    [Location("cache/gitfilelog.yaml", LocationAttribute.Location.LibraryFolder)]
+    sealed class GitFileLogCache : ManagedCacheBase<GitFileLogCache>, IGitFileLogCache
+    {
+        [SerializeField] private GitFileLog fileLog = GitFileLog.Default;
+
+        public GitFileLogCache() : base(CacheType.GitFileLog)
+        { }
+
+        public GitFileLog FileLog
+        {
+            get
+            {
+                ValidateData();
+                return fileLog;
+            }
+            set
+            {
+                var now = DateTimeOffset.Now;
+                var isUpdated = false;
+
+                var shouldUpdate = forcedInvalidation;
+
+                if (!shouldUpdate)
+                {
+                    shouldUpdate = true;
+                }
+
+                if (shouldUpdate)
+                {
+                    fileLog = value;
                     isUpdated = true;
                 }
 

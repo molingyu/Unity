@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyInformationalVersion(System.AssemblyVersionInformation.Version)]
 [assembly: ComVisible(false)]
 [assembly: AssemblyCompany("GitHub, Inc.")]
-[assembly: AssemblyCopyright("Copyright GitHub, Inc. 2017-2018")]
+[assembly: AssemblyCopyright("Copyright GitHub, Inc. 2016-2019")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -31,9 +31,10 @@ using System.Runtime.InteropServices;
 namespace System
 {
     internal static class AssemblyVersionInformation {
-        // this is for the AssemblyVersion and AssemblyVersion attributes, which can't handle alphanumerics
-        internal const string VersionForAssembly = "1.0.3";
-        // Actual real version
-        internal const string Version = "1.0.3";
+        private const string GitHubForUnityVersion = "1.4.0";
+        internal const string VersionForAssembly = GitHubForUnityVersion;
+
+        // If this is an alpha, beta or other pre-release, mark it as such as shown below
+        internal const string Version = GitHubForUnityVersion; // GitHubForUnityVersion + "-beta1"
     }
 }

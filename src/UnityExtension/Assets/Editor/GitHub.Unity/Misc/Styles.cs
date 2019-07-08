@@ -65,6 +65,7 @@ namespace GitHub.Unity
                                 headerBranchLabelStyle,
                                 headerUrlLabelStyle,
                                 headerRepoLabelStyle,
+                                fileHistoryLogTitleStyle,
                                 headerTitleStyle,
                                 headerDescriptionStyle,
                                 toolbarButtonStyle,
@@ -95,33 +96,6 @@ namespace GitHub.Unity
                                 invisibleLabel,
                                 locksViewLockedByStyle,
                                 locksViewLockedBySelectedStyle;
-
-        private static Texture2D branchIcon,
-                                 activeBranchIcon,
-                                 trackingBranchIcon,
-                                 favoriteIconOn,
-                                 favoriteIconOff,
-                                 smallLogoIcon,
-                                 bigLogoIcon,
-                                 folderIcon,
-                                 mergeIcon,
-                                 dotIcon,
-                                 localCommitIcon,
-                                 repoIcon,
-                                 lockIcon,
-                                 emptyStateInit,
-                                 dropdownListIcon,
-                                 globeIcon,
-                                 spinnerInside,
-                                 spinnerOutside,
-                                 code,
-                                 rocket,
-                                 merge,
-                                 spinnerInsideInverted,
-                                 spinnerOutsideInverted,
-                                 codeInverted,
-                                 rocketInverted,
-                                 mergeInverted;
 
         public static Texture2D GetFileStatusIcon(GitFileStatus status, bool isLocked)
         {
@@ -499,14 +473,14 @@ namespace GitHub.Unity
             }
         }
 
-        public static GUIStyle HistoryLockStyle
+        public static GUIStyle LockButtonStyle
         {
             get
             {
                 if (historyLockStyle == null)
                 {
                     historyLockStyle = new GUIStyle(GUI.skin.FindStyle("IN LockButton"));
-                    historyLockStyle.name = "HistoryLockStyle";
+                    historyLockStyle.name = "LockStyle";
                 }
                 historyLockStyle.margin = new RectOffset(3, 3, 2, 2);
                 return historyLockStyle;
@@ -761,8 +735,7 @@ namespace GitHub.Unity
                 return boldCenteredLabel;
             }
         }
-
-
+        
         public static GUIStyle CommitDescriptionFieldStyle
         {
             get
@@ -829,15 +802,25 @@ namespace GitHub.Unity
             }
         }
 
+        public static GUIStyle FileHistoryLogTitleStyle
+        {
+            get
+            {
+                if (fileHistoryLogTitleStyle == null)
+                {
+                    fileHistoryLogTitleStyle = new GUIStyle(EditorStyles.largeLabel);
+                    fileHistoryLogTitleStyle.name = "FileHistoryLogTitleStyle";
+                    fileHistoryLogTitleStyle.margin = new RectOffset(0, 0, 0, 0);
+                }
+                return fileHistoryLogTitleStyle;
+            }
+        }
+
         public static Texture2D ActiveBranchIcon
         {
             get
             {
-                if (activeBranchIcon == null)
-                {
-                    activeBranchIcon = Utility.GetIcon("current-branch-indicator.png", "current-branch-indicator@2x.png");
-                }
-                return activeBranchIcon;
+                return Utility.GetIcon("current-branch-indicator.png", "current-branch-indicator@2x.png", Utility.IsDarkTheme);
             }
         }
 
@@ -845,11 +828,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (branchIcon == null)
-                {
-                    branchIcon = Utility.GetIcon("branch.png", "branch@2x.png");
-                }
-                return branchIcon;
+                return Utility.GetIcon("branch.png", "branch@2x.png");
             }
         }
 
@@ -857,12 +836,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (trackingBranchIcon == null)
-                {
-                    trackingBranchIcon = Utility.GetIcon("tracked-branch-indicator.png");
-                }
-
-                return trackingBranchIcon;
+                return Utility.GetIcon("tracked-branch-indicator.png");
             }
         }
 
@@ -870,12 +844,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (favoriteIconOn == null)
-                {
-                    favoriteIconOn = Utility.GetIcon("favorite-branch-indicator.png");
-                }
-
-                return favoriteIconOn;
+                return Utility.GetIcon("favorite-branch-indicator.png");
             }
         }
 
@@ -883,12 +852,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (favoriteIconOff == null)
-                {
-                    favoriteIconOff = FolderIcon;
-                }
-
-                return favoriteIconOff;
+                return FolderIcon;
             }
         }
 
@@ -896,12 +860,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (smallLogoIcon == null)
-                {
-                    smallLogoIcon = Utility.GetIcon("small-logo.png");
-                }
-
-                return smallLogoIcon;
+                return Utility.IsDarkTheme ? Utility.GetIcon("small-logo-light.png", "small-logo-light@2x.png") : Utility.GetIcon("small-logo.png", "small-logo@2x.png");
             }
         }
 
@@ -909,16 +868,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (bigLogoIcon == null)
-                {
-                    var defaultTextColor = Label.normal.textColor;
-                    if (defaultTextColor.r > 0.5f && defaultTextColor.g > 0.5f && defaultTextColor.b > 0.5f)
-                        bigLogoIcon = Utility.GetIcon("big-logo-light.png");
-                    else
-                        bigLogoIcon = Utility.GetIcon("big-logo.png");
-                }
-
-                return bigLogoIcon;
+                return Utility.IsDarkTheme ? Utility.GetIcon("big-logo-light.png", "big-logo-light@2x.png") : Utility.GetIcon("big-logo.png", "big-logo@2x.png");
             }
         }
 
@@ -926,12 +876,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (mergeIcon == null)
-                {
-                    mergeIcon = Utility.GetIcon("git-merge.png", "git-merge@2x.png");
-                }
-
-                return mergeIcon;
+                return Utility.GetIcon("git-merge.png", "git-merge@2x.png");
             }
         }
 
@@ -939,12 +884,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (dotIcon == null)
-                {
-                    dotIcon = Utility.GetIcon("dot.png", "dot@2x.png");
-                }
-
-                return dotIcon;
+                return Utility.GetIcon("dot.png", "dot@2x.png", Utility.IsDarkTheme);
             }
         }
 
@@ -952,12 +892,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (localCommitIcon == null)
-                {
-                    localCommitIcon = Utility.GetIcon("local-commit-icon.png", "local-commit-icon@2x.png");
-                }
-
-                return localCommitIcon;
+                return Utility.GetIcon("local-commit-icon.png", "local-commit-icon@2x.png", Utility.IsDarkTheme);
             }
         }
 
@@ -965,12 +900,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (folderIcon == null)
-                {
-                    folderIcon = EditorGUIUtility.FindTexture("Folder Icon");
-                }
-
-                return folderIcon;
+                return EditorGUIUtility.FindTexture("Folder Icon");
             }
         }
 
@@ -978,11 +908,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (repoIcon == null)
-                {
-                    repoIcon = Utility.GetIcon("repo.png", "repo@2x.png");
-                }
-                return repoIcon;
+                return Utility.GetIcon("repo.png", "repo@2x.png", Utility.IsDarkTheme);
             }
         }
 
@@ -990,36 +916,23 @@ namespace GitHub.Unity
         {
             get
             {
-                if (lockIcon == null)
-                {
-                    lockIcon = Utility.GetIcon("lock.png", "lock@2x.png");
-                }
-                return lockIcon;
+                return Utility.GetIcon("lock.png", "lock@2x.png");
             }
         }
 
         public static Texture2D EmptyStateInit
         {
-          get
-          {
-            if (emptyStateInit == null)
+            get
             {
-              emptyStateInit = Utility.GetIcon("empty-state-init.png", "empty-state-init@2x.png");
+                return Utility.GetIcon("empty-state-init.png", "empty-state-init@2x.png");
             }
-            return emptyStateInit;
-          }
-
         }
 
         public static Texture2D DropdownListIcon
         {
             get
             {
-                if (dropdownListIcon == null)
-                {
-                    dropdownListIcon = Utility.GetIcon("dropdown-list-icon.png", "dropdown-list-icon@2x.png");
-                }
-                return dropdownListIcon;
+                return Utility.GetIcon("dropdown-list-icon.png", "dropdown-list-icon@2x.png");
             }
         }
 
@@ -1027,11 +940,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (globeIcon == null)
-                {
-                    globeIcon = Utility.GetIcon("globe.png", "globe@2x.png");
-                }
-                return globeIcon;
+                return Utility.GetIcon("globe.png", "globe@2x.png", Utility.IsDarkTheme);
             }
         }
 
@@ -1039,11 +948,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (spinnerInside == null)
-                {
-                    spinnerInside = Utility.GetIcon("spinner-inside.png", "spinner-inside@2x.png");
-                }
-                return spinnerInside;
+                return Utility.GetIcon("spinner-inside.png", "spinner-inside@2x.png");
             }
         }
 
@@ -1051,11 +956,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (spinnerOutside == null)
-                {
-                    spinnerOutside = Utility.GetIcon("spinner-outside.png", "spinner-outside@2x.png");
-                }
-                return spinnerOutside;
+                return Utility.GetIcon("spinner-outside.png", "spinner-outside@2x.png");
             }
         }
 
@@ -1063,11 +964,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (code == null)
-                {
-                    code = Utility.GetIcon("code.png", "code@2x.png");
-                }
-                return code;
+                return Utility.GetIcon("code.png", "code@2x.png");
             }
         }
 
@@ -1075,11 +972,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (rocket == null)
-                {
-                    rocket = Utility.GetIcon("rocket.png", "rocket@2x.png");
-                }
-                return rocket;
+                return Utility.GetIcon("rocket.png", "rocket@2x.png");
             }
         }
 
@@ -1087,11 +980,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (merge == null)
-                {
-                    merge = Utility.GetIcon("merge.png", "merge@2x.png");
-                }
-                return merge;
+                return Utility.GetIcon("merge.png", "merge@2x.png");
             }
         }
 
@@ -1099,12 +988,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (spinnerInsideInverted == null)
-                {
-                    spinnerInsideInverted = Utility.GetIcon("spinner-inside.png", "spinner-inside@2x.png");
-                    spinnerInsideInverted.InvertColors();
-                }
-                return spinnerInsideInverted;
+                return Utility.GetIcon("spinner-inside.png", "spinner-inside@2x.png", true);
             }
         }
 
@@ -1112,12 +996,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (spinnerOutsideInverted == null)
-                {
-                    spinnerOutsideInverted = Utility.GetIcon("spinner-outside.png", "spinner-outside@2x.png");
-                    spinnerOutsideInverted.InvertColors();
-                }
-                return spinnerOutsideInverted;
+                return Utility.GetIcon("spinner-outside.png", "spinner-outside@2x.png", true);
             }
         }
 
@@ -1125,12 +1004,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (codeInverted == null)
-                {
-                    codeInverted = Utility.GetIcon("code.png", "code@2x.png");
-                    codeInverted.InvertColors();
-                }
-                return codeInverted;
+                return Utility.GetIcon("code.png", "code@2x.png", true);
             }
         }
 
@@ -1138,12 +1012,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (rocketInverted == null)
-                {
-                    rocketInverted = Utility.GetIcon("rocket.png", "rocket@2x.png");
-                    rocketInverted.InvertColors();
-                }
-                return rocketInverted;
+                return Utility.GetIcon("rocket.png", "rocket@2x.png", true);
             }
         }
 
@@ -1151,12 +1020,7 @@ namespace GitHub.Unity
         {
             get
             {
-                if (mergeInverted == null)
-                {
-                    mergeInverted = Utility.GetIcon("merge.png", "merge@2x.png");
-                    mergeInverted.InvertColors();
-                }
-                return mergeInverted;
+                return Utility.GetIcon("merge.png", "merge@2x.png", true);
             }
         }
         private static GUIStyle foldout;
