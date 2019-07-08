@@ -54,6 +54,16 @@ namespace GitHub.Unity
         [SerializeField] private string currentBranch = "[unknown]";
 
         [SerializeField] private CommitType commitType = CommitType.Feat;
+        [SerializeField] private Dictionary<CommitType, string> commitTypeHelpMessages = new Dictionary<CommitType, string>{
+            {CommitType.Feat , "A new feature"},
+            {CommitType.Fix , "A bug fix"},
+            {CommitType.Doc , "Documentation only changes"},
+            {CommitType.Style , "Changes that do not affect the meaning of the code(white-space, formatting, missing semi-colons, etc)"},
+            {CommitType.Refactor , "A code change that neither fixes a bug or adds a feature"},
+            {CommitType.Perf , "A code change that improves performance"},
+            {CommitType.Test , "Add missing tests"},
+            {CommitType.Chore , "Changes to the build process or auxiliary tools and libraries such as documentation generation"}
+        };
         [SerializeField] private string scope = "";
         [SerializeField] private string footer = "";
 
@@ -206,8 +216,8 @@ namespace GitHub.Unity
                 treeChanges.FocusedTreeNodeStyle = Styles.FocusedTreeNode;
                 treeChanges.FocusedActiveTreeNodeStyle = Styles.FocusedActiveTreeNode;
 
-                var treeRenderRect = treeChanges.Render(rect, treeScroll, 
-                    node => { }, 
+                var treeRenderRect = treeChanges.Render(rect, treeScroll,
+                    node => { },
                     node => { },
                     node => {
                         var menu = CreateContextMenu(node);
@@ -473,7 +483,7 @@ namespace GitHub.Unity
                     GUILayout.Space(Styles.CommitAreaPadding);
 
                     // Disable committing when already committing or if we don't have all the data needed
-                    //Debug.LogFormat("IsBusy:{0} string.IsNullOrEmpty(commitMessage): {1} treeChanges.GetCheckedFiles().Any(): {2}", 
+                    //Debug.LogFormat("IsBusy:{0} string.IsNullOrEmpty(commitMessage): {1} treeChanges.GetCheckedFiles().Any(): {2}",
                     //    IsBusy, string.IsNullOrEmpty(commitMessage), treeChanges.GetCheckedFiles().Any());
                     EditorGUI.BeginDisabledGroup(IsBusy || string.IsNullOrEmpty(commitMessage) || !treeChanges.GetCheckedFiles().Any());
                     {
@@ -508,7 +518,7 @@ namespace GitHub.Unity
                 GUILayout.BeginVertical();
                 {
                     GUILayout.Space(Styles.CommitAreaPadding);
-
+                    EditorGUILayout.HelpBox(commitTypeHelpMessages[commitType], MessageType.Info);
                     GUILayout.BeginHorizontal();
                     {
                         commitType = (CommitType)EditorGUILayout.EnumPopup(TypeLabel, commitType);
@@ -532,7 +542,7 @@ namespace GitHub.Unity
                     GUILayout.Space(Styles.CommitAreaPadding);
 
                     // Disable committing when already committing or if we don't have all the data needed
-                    //Debug.LogFormat("IsBusy:{0} string.IsNullOrEmpty(commitMessage): {1} treeChanges.GetCheckedFiles().Any(): {2}", 
+                    //Debug.LogFormat("IsBusy:{0} string.IsNullOrEmpty(commitMessage): {1} treeChanges.GetCheckedFiles().Any(): {2}",
                     //    IsBusy, string.IsNullOrEmpty(commitMessage), treeChanges.GetCheckedFiles().Any());
                     EditorGUI.BeginDisabledGroup(IsBusy || string.IsNullOrEmpty(commitMessage) || !treeChanges.GetCheckedFiles().Any());
                     {
@@ -591,7 +601,7 @@ namespace GitHub.Unity
             }
 
             addTask
-                .FinallyInUI((success, exception) => 
+                .FinallyInUI((success, exception) =>
                     {
                         if (success)
                         {
